@@ -1,0 +1,67 @@
+pipeline {
+    agent any
+    stages {
+        stage('Setup Python Environment') {
+            steps {
+                script {
+                    echo 'Setting up the virtual environment and installing dependencies'
+                    sh '''
+                        env_name=".venv"
+                        if [ ! -d "$env_name" ]; then
+                            python3 -m venv "$env_name"
+                            echo "The virtual environment '$env_name' has been created."
+                        fi
+                        source "$env_name/bin/activate"
+                        echo "Virtual environment '$env_name' is activated."
+
+                        if [ ! -f "lab2/requirements.txt" ]; then
+                            echo "File requirements.txt not found."
+                            exit 1
+                        fi
+                        pip install -r lab2/requirements.txt
+                        echo "Dependencies installed."
+                    '''
+                }
+            }
+        }
+        stage('Create dataset') {
+            steps {
+                echo 'Start create dataset'
+                sh 'python3 lab2/scripts/data_creation.py'
+                echo 'Finish create dataset'
+            }
+        }
+        stage('Data preprocessing') {
+            steps {
+                echo 'Start data preprocessing'
+                sh 'python3 lab2/scripts/data_preprocessing.py'
+                echo 'Finish data preprocessing'
+            }
+        }
+        stage('Train model') {
+            steps {
+                echo 'Start train model'
+                sh 'python3 lab2/scripts/model_training.py'
+                echo 'Finish train model'
+            }
+        }
+        stage('Test model') {
+            steps {
+                echo 'Start test model'
+                sh 'python3 lab2/scripts/model_testing.py'
+                echo 'Finish test model'
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline has finished.'
+        }
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
